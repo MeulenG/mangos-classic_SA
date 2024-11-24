@@ -14,39 +14,143 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/* ScriptData
-SDName: Durotar
-SD%Complete: 100
-SDComment: Quest support: 5441
-SDCategory: Durotar
-EndScriptData
+ /* ScriptData
+ SDName: Durotar
+ SD%Complete: 100
+ SDComment: Quest support: 5441
+ SDCategory: Durotar
+ EndScriptData */
 
-*/
+ /* ContentData
+ npc_lazy_peon
+ EndContentData */
 
-#include "AI/ScriptDevAI/include/sc_common.h"/* ContentData
-npc_lazy_peon
-EndContentData */
+#include "AI/ScriptDevAI/include/sc_common.h"
 
-
-
-/*######
-## npc_lazy_peon
-######*/
+ /*######
+ ## npc_lazy_peon
+ ######*/
 
 enum
 {
-    SAY_PEON_AWOKEN      = -1000795,
+    // PEONS
+    SAY_PEON_AWOKEN = -1000795,
 
-    SOUND_PEON_WORK      = 6197,
-    SOUND_PEON_AWAKE_1   = 6292,
-    SOUND_PEON_AWAKE_2   = 6294,
+    SOUND_PEON_WORK = 6197,
+    SOUND_PEON_AWAKE_1 = 6292,
+    SOUND_PEON_AWAKE_2 = 6294,
 
-    SPELL_PEON_SLEEP     = 17743,
-    SPELL_AWAKEN_PEON    = 19938,
+    SPELL_PEON_SLEEP = 17743,
+    SPELL_AWAKEN_PEON = 19938,
 
-    NPC_SLEEPING_PEON    = 10556,
-    GO_LUMBERPILE        = 175784,
+    NPC_SLEEPING_PEON = 10556,
+    GO_LUMBERPILE = 175784,
+
+    // ZALAZANE PHASE 1
+    // ELEMENTAL PHASE
+    PHASE_1 = 1,
+    SPELL_THUNDERSTORM = 32717,
+    SPELL_MASS_ELEMENTALS = 35594,
+    SPELL_POISON_BOLT_VOLLEY = 34780,
+    NPC_SERPENT = 5762,
+
+
+
+    SPELL_HEALING_WAVE = 332, // Rank 2 Healing Wave
+    SPELL_ELEMENTAL_MASTERY = 16166, // Lol, for fun? Level 40 spell though.
+
+
+    // ZALAZANE PHASE 2
+    PHASE_2 = 2,
+    SPELL_TRANQUILIZING_POISON = 24002,
 };
+
+struct zalazaneAI : public ScriptedAI
+{
+    zalazaneAI(Creature* pCreature) : ScriptedAI(pCreature) { Reset(); }
+
+    // Let's do phases
+    uint32 m_uiPhase;
+
+    std::list<Creature*> m_Serpents;
+
+    void Reset() override
+    {
+        m_uiPhase = PHASE_1;
+        m_Serpents.clear();
+    }
+
+    bool m_serpentsSummoned = false;
+
+    void Phase1()
+    {
+        if (m_creature->GetHealthPercent() < 90.0f)
+        {
+            CanCastResult result = DoCastSpellIfCan(m_creature, SPELL_THUNDERSTORM);
+
+            if (result == CAST_OK)
+            {
+                DoCastSpellIfCan(m_creature, SPELL_POISON_BOLT_VOLLEY);
+            }
+
+            if (!m_serpentsSummoned)
+            {
+                for (int i = 0; i < 3; ++i)
+                {
+                    float angle = i * M_PI / 1.5f;
+                    float x = m_creature->GetPositionX() + 3.0f * cos(angle);
+                    float y = m_creature->GetPositionY() + 3.0f * sin(angle);
+                    float z = m_creature->GetPositionZ();
+                    float orientation = m_creature->GetOrientation();
+
+                    uint32 despawnTime = 30000;
+                    if (Creature* pSerpent = m_creature->SummonCreature(NPC_SERPENT, x, y, z, orientation, TEMPSPAWN_CORPSE_DESPAWN, despawnTime))
+                    {
+                        pSerpent->SetLevel(10);
+                        m_Serpents.push_back(pSerpent);
+                    }
+                }
+                m_serpentsSummoned = true;
+            }
+
+            if (m_creature->GetHealthPercent() < 60.0f)
+            {
+                DoCastSpellIfCan(m_creature, SPELL_HEALING_WAVE, CAST_FORCE_CAST);
+            }
+
+            if (m_creature->GetHealthPercent() < 15.0f)
+            {
+                m_uiPhase = PHASE_2;
+            }
+        }
+    }
+
+    void Phase2() {
+        // New Boss Setup
+        m_creature->SetHealth(1000);
+        m_creature->SetDisplayId(11371);
+        DoCastSpellIfCan(m_creature, SPELL_TRANQUILIZING_POISON);
+    }
+
+    void UpdateAI(const uint32 uiDiff) override
+    {
+        switch (m_uiPhase)
+        {
+        case PHASE_1: {
+            Phase1();
+        }
+        case PHASE_2: {
+            Phase2();
+        }
+        }
+        DoMeleeAttackIfReady();
+    }
+};
+
+UnitAI* GetAI_Zalazane(Creature* pCreature)
+{
+    return new zalazaneAI(pCreature);
+}
 
 struct npc_lazy_peonAI : public ScriptedAI
 {
@@ -122,21 +226,21 @@ struct npc_lazy_peonAI : public ScriptedAI
         {
             switch (uiPointId)
             {
-                case 1: //lumber pile
-                {
-                    m_creature->SetWalk(true);
-                    m_bIsAtPile = true;
-                    break;
-                }
-                case 2: //spawn
-                {
-                    m_creature->GetMotionMaster()->MoveIdle();
-                    m_creature->HandleEmote(EMOTE_STATE_NONE);
-                    m_creature->SetFacingTo(m_fSpawnO);
-                    DoCastSpellIfCan(m_creature, SPELL_PEON_SLEEP);
-                    RestartWakeTimer();
-                    break;
-                }
+            case 1: //lumber pile
+            {
+                m_creature->SetWalk(true);
+                m_bIsAtPile = true;
+                break;
+            }
+            case 2: //spawn
+            {
+                m_creature->GetMotionMaster()->MoveIdle();
+                m_creature->HandleEmote(EMOTE_STATE_NONE);
+                m_creature->SetFacingTo(m_fSpawnO);
+                DoCastSpellIfCan(m_creature, SPELL_PEON_SLEEP);
+                RestartWakeTimer();
+                break;
+            }
             }
         }
         else if (uiMotionType == WAYPOINT_MOTION_TYPE)
@@ -251,5 +355,10 @@ void AddSC_durotar()
     pNewScript->Name = "npc_lazy_peon";
     pNewScript->GetAI = &GetAI_npc_lazy_peon;
     pNewScript->pEffectDummyNPC = &EffectDummyCreature_lazy_peon_spell;
+    pNewScript->RegisterSelf();
+
+    pNewScript = new Script;
+    pNewScript->Name = "npc_zalazane";
+    pNewScript->GetAI = &GetAI_Zalazane;
     pNewScript->RegisterSelf();
 }
