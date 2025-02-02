@@ -67,10 +67,10 @@ enum
 
 struct zalazaneAI : public ScriptedAI
 {
-    zalazaneAI(Creature* pCreature) : ScriptedAI(pCreature) { Reset(); }
+	zalazaneAI(Creature* pCreature) : ScriptedAI(pCreature) { Reset(); }
 
     // Let's do phases
-    uint32 m_uiPhase;
+	uint32 m_uiPhase;
 
     std::list<Creature*> m_Serpents;
 
@@ -118,7 +118,7 @@ struct zalazaneAI : public ScriptedAI
                 DoCastSpellIfCan(m_creature, SPELL_HEALING_WAVE, CAST_FORCE_CAST);
             }
 
-            if (m_creature->GetHealthPercent() < 15.0f)
+            if (m_creature->GetHealthPercent() < 15.0f) 
             {
                 m_uiPhase = PHASE_2;
             }
@@ -132,17 +132,17 @@ struct zalazaneAI : public ScriptedAI
         DoCastSpellIfCan(m_creature, SPELL_TRANQUILIZING_POISON);
     }
 
-    void UpdateAI(const uint32 uiDiff) override
+	void UpdateAI(const uint32 uiDiff) override
     {
-        switch (m_uiPhase)
-        {
-        case PHASE_1: {
-            Phase1();
-        }
-        case PHASE_2: {
-            Phase2();
-        }
-        }
+		switch (m_uiPhase)
+		{
+			case PHASE_1: {
+				Phase1();
+			}
+			case PHASE_2: {
+                Phase2();
+			}
+		}
         DoMeleeAttackIfReady();
     }
 };
