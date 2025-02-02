@@ -1,0 +1,73 @@
+name: cmangos-server
+base: core22
+version: '1.0'
+summary: "Custom World of Warcraft server using CMaNGOS"
+description: |
+  A custom World of Warcraft server built with CMaNGOS, including modifications
+  for the hardest level process you will ever witness and revamped skill trees.
+
+grade: stable
+confinement: strict
+
+apps:
+  mangosd:
+    command: mangosd
+    daemon: simple
+    restart-condition: always
+    plugs: [network, network-bind]
+    environment:
+      MYSQL_ROOT_PASSWORD: $SNAP_COMMON/mysql_root_password
+      MYSQL_UNIX_PORT: $SNAP_COMMON/mysql.sock
+
+  realmd:
+    command: realmd
+    daemon: simple
+    restart-condition: always
+    plugs: [network, network-bind]
+    environment:
+      MYSQL_ROOT_PASSWORD: $SNAP_COMMON/mysql_root_password
+      MYSQL_UNIX_PORT: $SNAP_COMMON/mysql.sock
+
+parts:
+  cmangos-server:
+    plugin: cmake
+    source: .
+    build-packages:
+      - g++
+      - cmake
+      - make
+      - git
+      - libssl-dev
+      - libmysqlclient-dev
+      - zlib1g-dev
+    stage-packages:
+      - mysql-server
+      - mysql-client
+
+  sql-files:
+    plugin: dump
+    source: ./sql
+    organize:
+      'realmd.sql': sql/realmd.sql
+      'characters.sql': sql/characters.sql
+      'world.sql': sql/world.sql
+
+hooks:
+  install: |
+    #!/bin/sh
+    echo "Initializing MySQL databases..."
+    mysqld --initialize-insecure --datadir=$SNAP_COMMON/mysql
+    mysqld_safe --datadir=$SNAP_COMMON/mysql &
+    sleep 10
+
+    echo "Importing SQL files..."
+    mysql -u root --socket=$SNAP_COMMON/mysql.sock <<EOF
+    CREATE DATABASE IF NOT EXISTS realmd;
+    CREATE DATABASE IF NOT EXISTS characters;
+    CREATE DATABASE IF NOT EXISTS world;
+    SOURCE $SNAP/sql/realmd.sql;
+    SOURCE $SNAP/sql/characters.sql;
+    SOURCE $SNAP/sql/world.sql;
+    EOF
+
+    echo "MySQL initialization completed."
