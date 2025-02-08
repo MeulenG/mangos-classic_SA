@@ -11514,6 +11514,11 @@ void Player::PrepareGossipMenu(WorldObject* pSource, uint32 menuId, bool forceQu
                     if (!pCreature->CanTrainAndResetTalentsOf(this))
                         hasMenuItem = false;
                     break;
+                case GOSSIP_OPTION_LEARNDUALSPEC:
+                    if (pCreature->IsTrainerOf(this, true) && pCreature->GetLevel() == 10) {
+                        hasMenuItem = true;
+                    }
+                    break;
                 case GOSSIP_OPTION_UNLEARNPETSKILLS:
                     if (!GetPet() || GetPet()->getPetType() != HUNTER_PET || GetPet()->m_spells.size() <= 1 || pCreature->GetCreatureInfo()->TrainerType != TRAINER_TYPE_PETS || pCreature->GetCreatureInfo()->TrainerClass != CLASS_HUNTER)
                         hasMenuItem = false;
@@ -11777,6 +11782,9 @@ void Player::OnGossipSelect(WorldObject* pSource, uint32 gossipListId)
         case GOSSIP_OPTION_UNLEARNTALENTS:
             m_playerMenu->CloseGossip();
             SendTalentWipeConfirm(guid);
+            break;
+        case GOSSIP_OPTION_LEARNDUALSPEC:
+            m_playerMenu->CloseGossip();
             break;
         case GOSSIP_OPTION_UNLEARNPETSKILLS:
             m_playerMenu->CloseGossip();
