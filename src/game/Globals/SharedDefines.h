@@ -258,6 +258,7 @@ const uint32 ItemQualityColors[MAX_ITEM_QUALITY] =
     0xffe6cc80         // LIGHT YELLOW
 };
 
+#define MAX_TALENT_SPEC_COUNT   2
 enum SheathTypes
 {
     SHEATHETYPE_NONE                   = 0,
