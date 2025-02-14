@@ -863,6 +863,8 @@ enum Opcodes
     SMSG_CHARACTER_PROFILE_REALM_CONNECTED          = 0x339,
     SMSG_UNK                                        = 0x33A,
     SMSG_DEFENSE_MESSAGE                            = 0x33B,
+    SMSG_MODIFY_COOLDOWN                            = 0x491,
+    SMSG_TALENT_UPDATE                              = 0x4C0
 };
 
 // Don't forget to change this value and add opcode name to Opcodes.cpp when you add new opcode!
