@@ -119,7 +119,15 @@ struct PlayerSpell
     bool disabled          : 1;                             // first rank has been learned in result talent learn but currently talent unlearned, save max learned ranks
 };
 
+struct PlayerTalent
+{
+    TalentEntry const* talentEntry;
+    uint32 currentRank;
+    PlayerSpellState state;
+};
+
 typedef std::unordered_map<uint32, PlayerSpell> PlayerSpellMap;
+typedef std::unordered_map<uint32, PlayerTalent> PlayerTalentMap;
 
 struct SpellCooldown
 {
@@ -1486,6 +1494,14 @@ class Player : public Unit
         void LearnTalent(uint32 talentId, uint32 talentRank);
         uint32 CalculateTalentsPoints() const;
 
+        // Dual Spec
+        uint8 GetActiveSpec() const { return m_activeSpec; }
+        void SetActiveSpec(uint8 spec) { m_activeSpec = spec; }
+        uint8 GetSpecsCount() const { return m_specsCount; }
+        void SetSpecsCount(uint8 count) { m_specsCount = count; }
+        void ActivateSpec(uint8 specNum);
+        void UpdateSpecCount(uint8 count);
+
         uint32 GetFreePrimaryProfessionPoints() const { return GetUInt32Value(PLAYER_CHARACTER_POINTS2); }
         void SetFreePrimaryProfessions(uint16 profs) { SetUInt32Value(PLAYER_CHARACTER_POINTS2, profs); }
         void InitPrimaryProfessions();
@@ -1524,9 +1540,11 @@ class Player : public Unit
         uint32 getCinematic() const { return m_cinematic; }
         void setCinematic(uint32 cine) { m_cinematic = cine; }
 
-        static bool IsActionButtonDataValid(uint8 button, uint32 action, uint8 type, Player* player);
-        ActionButton* addActionButton(uint8 button, uint32 action, uint8 type);
-        void removeActionButton(uint8 button);
+        void SendLockActionButtons() const;
+
+        static bool IsActionButtonDataValid(uint8 button, uint32 action, uint8 type, Player* player, bool msg = true);
+        ActionButton* addActionButton(uint8 spec, uint8 button, uint32 action, uint8 type);
+        void removeActionButton(uint8 spec, uint8 button);
         void SendInitialActionButtons() const;
 
         PvPInfo pvpInfo;
@@ -2018,6 +2036,7 @@ class Player : public Unit
         float m_modManaRegenInterrupt;
         float m_SpellCritPercentage[MAX_SPELL_SCHOOL];
         bool HasMovementFlag(MovementFlags f) const;        // for script access to m_movementInfo.HasMovementFlag
+        void SendTalentsInfoData(bool pet);
         void UpdateFallInformationIfNeed(MovementInfo const& minfo, uint16 opcode);
         void SetFallInformation(uint32 time, float z)
         {
@@ -2025,6 +2044,8 @@ class Player : public Unit
             m_lastFallZ = z;
         }
         void HandleFall(MovementInfo const& movementInfo);
+
+        PlayerTalent const* GetKnownTalentById(int32 talentId) const;
 
         bool isMovingOrTurning() const { return m_movementInfo.HasMovementFlag(movementOrTurningFlagsMask); }
 
@@ -2198,8 +2219,11 @@ class Player : public Unit
         virtual void RemoveSpellCategoryCooldown(uint32 category, bool updateClient = true) override;
         virtual void RemoveAllCooldowns(bool sendOnly = false) override;
         virtual void LockOutSpells(SpellSchoolMask schoolMask, uint32 duration) override;
+        void ModifyCooldown(uint32 spellId, int32 cooldownModMs);
+        void ModifyCooldownTo(uint32 spellId, std::chrono::milliseconds remainingCooldown);
         void RemoveSpellLockout(SpellSchoolMask spellSchoolMask, std::set<uint32>* spellAlreadySent = nullptr);
         void SendClearCooldown(uint32 spell_id, Unit* target) const;
+        void BuildPlayerTalentsInfoData(WorldPacket& data);
         void _LoadSpellCooldowns(std::unique_ptr<QueryResult> queryResult);
         void _SaveSpellCooldowns();
 
@@ -2367,8 +2391,12 @@ class Player : public Unit
 
         PlayerMails m_mail;
         PlayerSpellMap m_spells;
+        PlayerTalentMap m_talents[MAX_TALENT_SPEC_COUNT];
 
-        ActionButtonList m_actionButtons;
+        uint8 m_activeSpec;
+        uint8 m_specsCount;
+
+        ActionButtonList m_actionButtons[MAX_TALENT_SPEC_COUNT];
 
         float m_auraBaseMod[BASEMOD_END][MOD_END];
 

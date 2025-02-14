@@ -152,6 +152,12 @@ class CooldownData
             return true;
         }
 
+        // wotlk+ feature
+        void SetSpellCDExpireTime(TimePoint expireTime)
+        {
+            m_expireTime = expireTime;
+        }
+
         bool IsSpellCDExpired(TimePoint const& now) const
         {
             if (m_typePermanent)
