@@ -164,6 +164,7 @@ CREATE TABLE `character_account_data` (
 DROP TABLE IF EXISTS `character_action`;
 CREATE TABLE `character_action` (
   `guid` int(11) unsigned NOT NULL DEFAULT '0' COMMENT 'Global Unique Identifier',
+  `spec` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `button` tinyint(3) unsigned NOT NULL DEFAULT '0',
   `action` int(11) unsigned NOT NULL DEFAULT '0',
   `type` tinyint(3) unsigned NOT NULL DEFAULT '0',
@@ -606,6 +607,25 @@ LOCK TABLES `character_stats` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `character_talent`
+--
+
+DROP TABLE IF EXISTS `character_talent`;
+CREATE TABLE `character_talent` (
+  `guid` int(11) unsigned NOT NULL,
+  `talent_id` int(11) unsigned NOT NULL,
+  `current_rank` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  `spec` tinyint(3) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`guid`,`talent_id`,`spec`),
+  KEY `talent_key` (`talent_id`),
+  KEY `spec_key` (`spec`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Dumping data for table `character_talent`
+--
+
+--
 -- Table structure for table `character_tutorial`
 --
 
@@ -689,6 +709,8 @@ CREATE TABLE `characters` (
   `power3` int(10) unsigned NOT NULL DEFAULT '0',
   `power4` int(10) unsigned NOT NULL DEFAULT '0',
   `power5` int(10) unsigned NOT NULL DEFAULT '0',
+  'specCount' TINYINT unsigned NOT NULL DEFAULT '1',
+  'activeSpec' TINYINT unsigned NOT NULL DEFAULT '1',
   `exploredZones` longtext,
   `equipmentCache` longtext,
   `ammoId` int(10) unsigned NOT NULL DEFAULT '0',
