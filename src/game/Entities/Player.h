@@ -716,6 +716,7 @@ enum PlayerLoginQueryIndex
     PLAYER_LOGIN_QUERY_LOADSKILLS,
     PLAYER_LOGIN_QUERY_LOADMAILS,
     PLAYER_LOGIN_QUERY_LOADMAILEDITEMS,
+    PLAYER_LOGIN_QUERY_LOADTALENTS,
     PLAYER_LOGIN_QUERY_LOADWEEKLYQUESTSTATUS,
 
     MAX_PLAYER_LOGIN_QUERY
@@ -1545,6 +1546,7 @@ class Player : public Unit
         static bool IsActionButtonDataValid(uint8 button, uint32 action, uint8 type, Player* player, bool msg = true);
         ActionButton* addActionButton(uint8 spec, uint8 button, uint32 action, uint8 type);
         void removeActionButton(uint8 spec, uint8 button);
+        ActionButton const* GetActionButton(uint8 button);
         void SendInitialActionButtons() const;
 
         PvPInfo pvpInfo;
@@ -2296,6 +2298,7 @@ class Player : public Unit
         void _LoadActions(std::unique_ptr<QueryResult> queryResult);
         void _LoadAuras(std::unique_ptr<QueryResult> queryResult, uint32 timediff);
         void _LoadBoundInstances(std::unique_ptr<QueryResult> queryResult);
+        void _LoadTalents(std::unique_ptr<QueryResult> queryResult);
         void _LoadHonorCP(std::unique_ptr<QueryResult> queryResult);
         void _LoadInventory(std::unique_ptr<QueryResult> queryResult, uint32 timediff);
         void _LoadItemLoot(std::unique_ptr<QueryResult> queryResult);
@@ -2326,6 +2329,7 @@ class Player : public Unit
         void _SaveWeeklyQuestStatus();
         void _SaveSkills();
         void _SaveSpells();
+        void _SaveTalents();
         void _SaveBGData();
         void _SaveStats();
 
